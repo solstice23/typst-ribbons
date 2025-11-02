@@ -369,8 +369,19 @@ A Tinter returns a function, Nodes -> Palette -> Nodes
 				
 				content((x, y), text(properties.name, size: 8pt))
 
-				// ribbons
+				// sort ribbons first by slope to prevent crossing
+				let edges = ()
 				for (to-node-id, edge-size) in properties.edges {
+					edges.push((
+						to-node-id: to-node-id,
+						edge-size: edge-size,
+						slope: (nodes.at(to-node-id).y - y) / (nodes.at(to-node-id).x - x)
+					))
+				}
+				edges = edges.sorted(key: it => -it.slope)
+
+				// ribbons
+				for (to-node-id, edge-size) in edges {
 					let to-properties = nodes.at(to-node-id)
 					let top-left = (x + width / 2, y + height / 2 - acc-out-size.at(node-id, default: 0) / properties.size * height)
 					let bottom-left = (top-left.at(0), top-left.at(1) - edge-size / properties.size * height)
