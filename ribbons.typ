@@ -1,59 +1,46 @@
 #import "@preview/cetz:0.4.2"
 #import "./utils.typ": *
 
-#let topo-sort = (
+#let assign-layers = (
 	nodes,
 	layer-override: (:)
 ) => {
-	// TODO: CHANGE TO DEPTH ON TREE
-	let current-layer = 0
 	let layer-dict = (:)
 
 	let queue = ()
-	let next = ()
-
-	let in-degree = (:)
-	for (node-id, (edges, )) in nodes {
-		for to in edges.keys() {
-			in-degree.insert(to, in-degree.at(to, default: 0) + 1)
+	let visited = (:)
+	let max-layer = 0
+	for (node-id, properties) in nodes {
+		// BFS to assign layers for each component
+		if (visited.at(node-id, default: false) == false) {
+			queue.push((node-id: node-id, layer: 0))
 		}
-	}
-	for (node-id, (edges, )) in nodes {
-		if (in-degree.at(node-id, default: 0) == 0) {
-			queue.push(node-id)
-		}
-	}
-
-	while (queue.len() > 0) {
-		// layers.push(queue)
-		for node in queue {
-			layer-dict.insert(node, current-layer)
-		}
-		current-layer += 1
+		let tmp-layer = (:)
+		let min-layer = 0
 		while (queue.len() > 0) {
-			let node-id = queue.remove(0)
-			for (to, _) in nodes.at(node-id).edges {
-				in-degree.insert(to, in-degree.at(to) - 1)
-				if (in-degree.at(to) == 0) {
-					next.push(to)
+			let (node-id, layer) = queue.remove(0)
+			if (visited.at(node-id, default: false) == true) {
+				continue
+			}
+			tmp-layer.insert(node-id, layer)
+			min-layer = calc.min(min-layer, layer)
+			visited.insert(node-id, true)
+			for (to-node-id, size) in nodes.at(node-id).edges {
+				if (visited.at(to-node-id, default: false) == false) {
+					queue.push((node-id: to-node-id, layer: layer + 1))
+				}
+			}
+			for (from-node-id, size) in nodes.at(node-id).from-edges {
+				if (visited.at(from-node-id, default: false) == false) {
+					queue.push((node-id: from-node-id, layer: layer - 1))
 				}
 			}
 		}
-		queue = next
-		next = ()
-	}
-
-	// Check for remaining nodes (cycles)
-	for (node-id, _) in nodes {
-		if (in-degree.at(node-id, default: 0) > 0) {
-			queue.push(node-id)
-		}
-	}
-	if (queue.len() > 0) {
-		// panic("Graph has cycles: " + queue.join(", "))
-		// layers.push(queue)
-		for node in queue {
-			layer-dict.insert(node, current-layer)
+		// Normalize layers to start from 0
+		for (node-id, layer) in tmp-layer {
+			let normalized-layer = layer - min-layer
+			max-layer = calc.max(max-layer, normalized-layer)
+			layer-dict.insert(node-id, normalized-layer)
 		}
 	}
 	// Apply layer override
@@ -63,7 +50,7 @@
 
 	// Collect nodes in layers	
 	let layers = ()
-	for i in range(0, current-layer + 1) {
+	for i in range(0, max-layer + 1) {
 		layers.push(())
 	}
 	for node-id in nodes.keys() { // keep original order
@@ -226,7 +213,7 @@ A Tinter returns a function, Nodes -> Palette -> Nodes
 	let layer-override = layers
 	( layouter: (nodes) => {
 		// Calculate layers for each node
-		let layers = topo-sort(nodes, layer-override: layer-override)
+		let layers = assign-layers(nodes, layer-override: layer-override)
 
 		for (layer-index, layer) in layers.enumerate() {
 			for node-id in layer {
@@ -258,17 +245,21 @@ A Tinter returns a function, Nodes -> Palette -> Nodes
 			let layer = properties.layer
 			let x = layer * (node-width + layer-gap) + node-width / 2
 			nodes.at(node-id).insert("x", x)
-			
 		}
-		// Give initial y positions
-		for layer in layers {
+		// Assign initial y positions based on node-gap
+		let layer-assign-y-positions = (nodes, layer) => {
 			let offset = 0.0
 			for node-id in layer {
 				let height = nodes.at(node-id).height
 				nodes.at(node-id).insert("y", offset - height / 2)
 				offset -= height + node-gap
 			}
+			nodes
 		}
+		for layer in layers {
+			nodes = layer-assign-y-positions(nodes, layer)
+		}
+
 		/*
 			A node receives forces from:
 				- attraction to every connected nodes
@@ -375,10 +366,10 @@ A Tinter returns a function, Nodes -> Palette -> Nodes
 					edges.push((
 						to-node-id: to-node-id,
 						edge-size: edge-size,
-						slope: (nodes.at(to-node-id).y - y) / (nodes.at(to-node-id).x - x)
+						slope: calc.atan2((nodes.at(to-node-id).y - y), (nodes.at(to-node-id).x - x))
 					))
 				}
-				edges = edges.sorted(key: it => -it.slope)
+				edges = edges.sorted(key: it => it.slope)
 
 				// ribbons
 				for (to-node-id, edge-size) in edges {
@@ -590,12 +581,12 @@ Ribbon colorizers
 	ribbon-color: ribbon-from-color()
 ) => {
 	let nodes = preprocess-data(data, aliases)
+	//repr(assign-layers(nodes))
 	let (layouter, drawer) = layout
 	nodes = layouter(nodes)
 	nodes = tinter(nodes)
+	// repr(nodes)
 	drawer(nodes, ribbon-color)
-	repr(nodes)
-	repr(topo-sort(nodes))
 }
 
 
@@ -841,14 +832,6 @@ Ribbon colorizers
 	),
 	ribbon-color: ribbon-gradient-from-to()
 )
-#cetz.canvas({
-	import cetz.draw: *
-	let (a, b, c, d) = ((0, 0), (2, 1), (.8, 0), (1.2, 1))
-	line(a, c, d, b, stroke: gray)
-	bezier(a, b, c, d)
-})
-
-
 
 #sankey(
 	(
@@ -887,5 +870,14 @@ Ribbon colorizers
 	))
 )
 
-// TODO: size overrides
+#sankey(
+	(
+		"A": ("B": 10),
+		"B": ("C": 10),
+		"C": ("D": 10, "Y": 10),
+		"D": ("E": 10),
+		"X": ("C": 10),
+	)
+)
 
+// TODO: size overrides
