@@ -1,6 +1,8 @@
 #import "@preview/cetz:0.4.2"
 #import "./utils.typ": *
 
+#import "./ribbon-stylizer.typ"
+
 #let assign-layers = (
 	nodes,
 	layer-override: (:)
@@ -57,6 +59,7 @@
 		let layer = layer-dict.at(node-id)
 		layers.at(layer).push(node-id)		
 	}
+	layers = layers.map(layer => layer.sorted(key: (it) => nodes.at(it).number-id))
 
 	return layers
 }
@@ -64,12 +67,15 @@
 
 #let preprocess-data = (
 	data,
-	aliases
+	aliases,
+	categories
 ) => {
 	// Add nodes that defined implicitly by being a target of an edge
 	assert(type(data) == dictionary, message: "Expected a dictionary")
-
 	for (node-id, edges) in data {
+		if ((type(edges) == array and edges.len() == 0) or edges == none) {
+			edges = (:)
+		}
 		assert(type(edges) == dictionary, message: "Expected a dictionary of dictionaries")
 		for target in edges.keys() {
 			if (data.at(target, default: none) == none) {
@@ -78,7 +84,7 @@
 		}
 	}
 
-	// Make edges dictionaries in another dictionary for other attributes
+	// Make edges dictionaries one of the attributes
 	for (node-id, edges) in data {
 		data.insert(node-id, (
 			edges: edges,
@@ -100,7 +106,15 @@
 			data.at(node-id).insert("name", node-id)
 		}
 	}
-	// add #id
+	// Add category
+	for (category-name, node-ids) in categories {
+		for node-id in node-ids {
+			if (data.at(node-id, default: none) != none) {
+				data.at(node-id).insert("category", category-name)
+			}
+		}
+	}
+	// Add #id
 	let counter = 0
 	for (node-id, properties) in data {
 		data.at(node-id).insert("number-id", counter)
@@ -122,7 +136,6 @@
 		data.at(node-id).insert("out-size", out-size)
 	}
 
-	// TODO: Add more attributes
 	data
 }
 
@@ -131,11 +144,9 @@
 A Palette is an array of colours
 A Tinter returns a function, Nodes -> Palette -> Nodes
 */
-#let tint-override = (overrides) => {
-
-}
-// #let default-palette = (red, green, blue, orange, purple, gray, yellow)
 #let color-brewer-palette = (rgb("#66C2A5"), rgb("#FC8D62"), rgb("#8DA0CB"), rgb("#E78AC3"), rgb("#A6D854"), rgb("#FFD92F"), rgb("#E5C494"), rgb("#B3B3B3"))
+#let tableau = (rgb("#1F77B4"), rgb("#FF7F0E"), rgb("#2CA02C"), rgb("#D62728"), rgb("#9467BD"), rgb("#8C564B"), rgb("#E377C2"), rgb("#7F7F7F"), rgb("#BCBD22"), rgb("#17BECF"))
+#let catppuccin = (rgb("#e78284"), rgb("#a6d189"), rgb("#e5c890"), rgb("#8caaee"), rgb("#f4b8e4"), rgb("#81c8be"), rgb("#ca9ee6"), rgb("#ea999c"), rgb("#85c1dc"), rgb("#ef9f76"), rgb("#99d1db"), rgb("#eebebe"), rgb("#f2d5cf"))
 #let default-palette = color-brewer-palette
 
 #let layer-tinter = (
@@ -155,7 +166,25 @@ A Tinter returns a function, Nodes -> Palette -> Nodes
 #let categorical-tinter = (
 	palette: default-palette
 ) => {
-	
+	(nodes) => {
+		let categories = ()
+		// collect categories
+		for (node-id, properties) in nodes {
+			categories.push(properties.at("category", default: "default"))
+		}
+		categories = categories.dedup()
+		let category-index = (:)
+		for (index, category) in categories.enumerate() {
+			category-index.insert(category, index)
+		}
+		// assign colors
+		for (node-id, properties) in nodes {
+			let index = category-index.at(properties.at("category", default: "default"))
+			let color = palette.at(calc.rem(index, palette.len()))
+			nodes.at(node-id).insert("color", color)
+		}
+		return nodes
+	}
 }
 
 #let node-tinter = (
@@ -171,12 +200,16 @@ A Tinter returns a function, Nodes -> Palette -> Nodes
 	}
 }
 #let dict-tinter = (
-	color-map
+	color-map,
+	override: none
 ) => {
 	assert(type(color-map) == dictionary, message: "Expected a dictionary for color-map")
 	(nodes) => {
+		if (override != none) {
+			nodes = override(nodes)
+		}
 		for (node-id, properties) in nodes {
-			let color = color-map.at(node-id, default: default-palette.at(0))
+			let color = color-map.at(node-id, default: if (override == none) { default-palette.at(0) } else { nodes.at(node-id).color })
 			nodes.at(node-id).insert("color", color)
 		}
 		return nodes
@@ -207,7 +240,8 @@ A Tinter returns a function, Nodes -> Palette -> Nodes
 	layer-gap: 2,
 	node-gap: 1.5,
 	node-width: 0.25,
-	basenode-height: 3,
+	base-node-height: 3,
+	min-node-height: 0.1,
 	centerize-layer: false,
 	vertical: false,
 	layers: (:),
@@ -239,7 +273,7 @@ A Tinter returns a function, Nodes -> Palette -> Nodes
 		}
 		for (node-id, properties) in nodes {
 			let node-size = properties.size
-			let node-height = node-size / max-node-size * basenode-height
+			let node-height = calc.max(node-size / max-node-size * base-node-height, min-node-height)
 			nodes.at(node-id).insert("height", node-height)
 		}
 
@@ -384,7 +418,7 @@ A Tinter returns a function, Nodes -> Palette -> Nodes
 		}
 
 		return nodes
-	}, drawer: (nodes, ribbon-colorizer, label-drawer) => {
+	}, drawer: (nodes, ribbon-stylizer, label-drawer) => {
 		cetz.canvas({
 			import cetz.draw: *
 
@@ -419,7 +453,7 @@ A Tinter returns a function, Nodes -> Palette -> Nodes
 							layer-gap: layer-gap,
 							node-gap: node-gap,
 							node-width: node-width,
-							basenode-height: basenode-height,
+							base-node-height: base-node-height,
 							vertical-layout: vertical
 						)
 					}
@@ -454,8 +488,7 @@ A Tinter returns a function, Nodes -> Palette -> Nodes
 					let bezier-bottom-control-1 = point-translate(bottom-left, (curve-factor * (bottom-right.at(0) - bottom-left.at(0)), 0))
 					let bezier-bottom-control-2 = point-translate(bottom-right, (-curve-factor * (bottom-right.at(0) - bottom-left.at(0)), 0))
 					merge-path(
-						fill: ribbon-colorizer(properties.color, to-properties.color, node-id, to-node-id),
-						stroke: none,
+						..ribbon-stylizer(properties.color, to-properties.color, node-id, to-node-id),
 						{
 							bezier(top-left, top-right, bezier-top-control-1, bezier-top-control-2)
 							line(top-right, bottom-right)
@@ -508,7 +541,7 @@ A Tinter returns a function, Nodes -> Palette -> Nodes
 		}
 		
 		return nodes
-	}, drawer: (nodes, ribbon-colorizer, label-drawer) => {
+	}, drawer: (nodes, ribbon-stylizer, label-drawer) => {
 		cetz.canvas({
 			import cetz.draw: *
 			
@@ -589,11 +622,10 @@ A Tinter returns a function, Nodes -> Palette -> Nodes
 
 					
 					merge-path(
-						fill: ribbon-colorizer(
+						..ribbon-stylizer(
 							properties.color, to-properties.color, node-id, to-node-id,
 							angle: -calc.atan2(to-center.at(0) - from-center.at(0), to-center.at(1) - from-center.at(1))
 						),
-						stroke: 0.5pt + white,
 						{
 							arc-through(from-left, from-center, from-right)
 							bezier(from-right, to-left, (0, 0))
@@ -609,33 +641,6 @@ A Tinter returns a function, Nodes -> Palette -> Nodes
 	})
 }
 
-/*
-Ribbon colorizers
-*/
-
-#let ribbon-from-color = (
-	transparency: 75%,
-) => {
-	(from-color, to-color, from-node, to-node, ..) => from-color.transparentize(transparency)
-}
-#let ribbon-to-color = (
-	transparency: 75%,
-) => {
-	(from-color, to-color, from-node, to-node, ..) => to-color.transparentize(transparency)
-}
-#let ribbon-gradient-from-to = (
-	transparency: 75%,
-) => {
-	(from-color, to-color, from-node, to-node, angle: 0deg, ..) => {
-		gradient.linear(from-color.transparentize(transparency), to-color.transparentize(transparency), angle: angle)
-	}
-}
-#let ribbon-solid-color = (
-	color: black,
-	transparency: 90%,
-) => {
-	(from-color, to-color, from-node, to-node, ..) => color.transparentize(transparency)
-}
 
 /*
 Label drawer
@@ -646,7 +651,7 @@ Label drawer
 	width-limit: auto, // auto | false | value,
 	styles: (
 		inset: 0.2em,
-		fill: white.transparentize(30%),
+		fill: white.transparentize(50%),
 		radius: 2pt
 	),
 	draw-content: (properties) => {[
@@ -732,12 +737,13 @@ Label drawer
 #let sankey = (
 	data,
 	aliases: (:),
+	categories: (:),
 	layout: auto-linear-layout(),
 	tinter: default-tinter(),
-	ribbon-color: ribbon-from-color(),
+	ribbon-color: ribbon-stylizer.default(),
 	draw-label: default-linear-label-drawer(),
 ) => {
-	let nodes = preprocess-data(data, aliases)
+	let nodes = preprocess-data(data, aliases, categories)
 	//repr(assign-layers(nodes))
 	let (layouter, drawer) = layout
 	nodes = layouter(nodes)
@@ -752,6 +758,7 @@ Label drawer
 		"A": ("B": 5, "C": 3),
 		"B": ("D": 2, "E": 4),
 		"C": ("D": 3, "E": 4),
+		"D": (:),
 		"E": ("F": 2),
 	)
 )
@@ -988,7 +995,7 @@ Label drawer
 			"District heating": 79
 		)
 	),
-	ribbon-color: ribbon-gradient-from-to()
+	ribbon-color: ribbon-stylizer.gradient-from-to()
 )
 
 #sankey(
@@ -1007,7 +1014,7 @@ Label drawer
 	),
 	layout: circular-layout(directed: true),
 	// tinter: node-tinter()
-	ribbon-color: ribbon-gradient-from-to()
+	ribbon-color: ribbon-stylizer.gradient-from-to()
 )
 
 
@@ -1019,7 +1026,6 @@ Label drawer
 		"red": ("black": 1013, "blond": 990, "brown": 940, "red": 6907)  
 	),
 	layout: circular-layout(),
-	ribbon-color: ribbon-gradient-from-to(transparency: 70%),
 	tinter: dict-tinter((
 		"black": rgb("#000000"),
 		"blond": rgb("#ffdd89"),
@@ -1037,6 +1043,3 @@ Label drawer
 		"X": ("C": 10),
 	)
 )
-
-// TODO: size overrides
-// TODO: style overrides
