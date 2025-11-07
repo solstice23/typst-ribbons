@@ -338,11 +338,12 @@
 
 #chord-diagram(
 	(
-		"a": ("a": 1000, "b": 1000),
+		"a": ("a": 1000, "b": (300, 500)),
 		"b": ("a": 500, "b": 1000),
 	),
+    layout: layout.circular(directed: true)
 	// tinter: node-tinter()
-	ribbon-stylizer: ribbon-stylizer.gradient-from-to()
+	// ribbon-stylizer: ribbon-stylizer.gradient-from-to()
 )
 
 

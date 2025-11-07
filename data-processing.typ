@@ -7,7 +7,7 @@
  *
  * outgoingEdges = DetailedEdges | SimpleEdges
  * DetailedEdges = array of (to: node-id, size: number, ([style]: , ..edge-attributes))
- * SimpleEdges = a dict: ([to: node-id]: size)
+ * SimpleEdges = a dict: ([to: node-id]: size | array of size)
  *
  * The output of all preprocess-data functions is a dictionary:
  * ([node-id]: DetailedEdges)
@@ -88,13 +88,23 @@
 		if (type(edges) == dictionary) {
 			// SimpleEdges
 			for (to, size) in edges {
+                let sizes = if (type(size) == array) {
+                    size
+                } else if (type(size) == int or type(size) == float) {
+                    (size, )
+                } else {
+                    panic("Edge size must be a number or an array of numbers", repr(size))
+                }
+
 				if (nodes.at(to, default: none) == none) {
 					nodes.insert(to, ())
 				}
-				nodes.at(from).push((
-					to: to,
-					size: size
-				))
+                for size in sizes {
+                    nodes.at(from).push((
+                        to: to,
+                        size: size
+                    ))
+                }
 			}
 		} else {
 			// DetailedEdges
