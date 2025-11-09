@@ -1,4 +1,4 @@
-#import "../src/ribbons.typ": *
+#import "../src/ribbony.typ": *
 
 
 // Common styles
@@ -11,7 +11,7 @@
 	fill: black.transparentize(95%),
 	radius: 4pt
 )
-#let premable = "#import \"../src/ribbons.typ\": *"
+#let premable = "#import \"../src/ribbony.typ\": *"
 #let example = (code, display-code: none, side-by-side: true) => {
 	if (code.func() != raw ) {
 		code = code.children.find(it => it.func() == raw)
@@ -132,13 +132,13 @@
 
 
 #align(center)[
-  #text(size: 30pt)[*typst-ribbons*]
+  #text(size: 30pt)[*typst-ribbony*]
   
   #text(size: 14pt)[Manual]
   
   #v(0.5em)
 
-  _A library for creating ribbon diagrams in Typst, such as Sankey and Chord diagrams._
+  _A library for creating ribbony diagrams in Typst, such as Sankey and Chord diagrams._
 ]
 
 #v(-1em)
@@ -158,7 +158,7 @@
 == Installation
 
 ```typ
-#import "@preview/typst-ribbons:0.1.0": *
+#import "@preview/ribbony:0.1.0": *
 ```
 
 == Quick start 
@@ -225,15 +225,15 @@ Visit #link(<sec:drawing-functions>)[drawing functions] section for details.
 
 = Drawing Functions <sec:drawing-functions>
 
-The library offers `ribbon-diagram` function as the base to draw any ribbon diagrams.
+The library offers `ribbony-diagram` function as the base to draw any ribbon diagrams.
 
-`sankey-diagram`, `chord-diagram` and other specific functions are just a wrapper of `ribbon-diagram` with preset parameters. So it suffices to get to know `ribbon-diagram` here, as other functions share the same parameters except for different default values.
+`sankey-diagram`, `chord-diagram` and other specific functions are just a wrapper of `ribbony-diagram` with preset parameters. So it suffices to get to know `ribbony-diagram` here, as other functions share the same parameters except for different default values.
 
-== `ribbon-diagram`
+== `ribbony-diagram`
 
-The core of `ribbons` library.
+The core of `ribbony` library.
 
-#params("ribbon-diagram", "content", (
+#params("ribbony-diagram", "content", (
 	( "data", "data", true, required, [
 		The data for the ribbon diagram.
 	]),
@@ -244,13 +244,13 @@ The core of `ribbons` library.
 		A dictionary for specifying categories for nodes. Keys are categories names, and values are arrays of node ids belonging to each category. Category will be attached to the node properties, can be used by tinter and other customization functions.
 	]),
 	( "layout", "layout", false, `layout.auto-linear()`, [
-		The layout (including layouter and drawer) to arrange and draw the ribbons.
+		The layout (including layouter and drawer) to arrange and draw the ribbony.
 	]),
 	( "tinter", "tinter", false, `tinter.default-tinter()`, [
 		The tinter function to assign colors to nodes.
 	]),
 	( "ribbon-stylizer", "ribbon-stylizer", false, `ribbon-stylizer.default()`, [
-		The stylizer function to define the appearance of the ribbons, such as color, gradient, stroke, etc.
+		The stylizer function to define the appearance of the ribbony, such as color, gradient, stroke, etc.
 	]),
 	( "draw-label", "label-drawer", false, `none`, [
 		A function to draw labels for each node.
@@ -264,15 +264,15 @@ The core of `ribbons` library.
 
 == `sankey-diagram`
 
-A wrapper of `ribbon-diagram` for drawing sankey diagrams.
+A wrapper of `ribbony-diagram` for drawing sankey diagrams.
 
-Takes the same parameters as `ribbon-diagram`, with different default values for some parameters.
+Takes the same parameters as `ribbony-diagram`, with different default values for some parameters.
 
 == `chord-diagram`
 
-A wrapper of `ribbon-diagram` for drawing chord diagrams.
+A wrapper of `ribbony-diagram` for drawing chord diagrams.
 
-Takes the same parameters as `ribbon-diagram`, with different default values for some parameters.
+Takes the same parameters as `ribbony-diagram`, with different default values for some parameters.
 
 = Data <sec:data>
 
@@ -397,13 +397,13 @@ In this example, the `6000` at row 2 column 3 indicates an edge from `Europe` to
 
 == Behind the scene
 
-Internally, all data formats will be converted to a new format for easier processing. The document doesn't list this for now. If you want to know more about this, pass `debug: 1` to `ribbon-diagram` function to see the structure of pre-processed data.
+Internally, all data formats will be converted to a new format for easier processing. The document doesn't list this for now. If you want to know more about this, pass `debug: 1` to `ribbony-diagram` function to see the structure of pre-processed data.
 
 = Layout <sec:layout>
 
 #type-box("layout") is a tuple of `(layouter, drawer)`, which defines how to layout and draw the ribbon diagram.
 
-Layout is the main part of the diagram drawing process. The type of diagram is mainly determined by the layout passed to `ribbon-diagram`.
+Layout is the main part of the diagram drawing process. The type of diagram is mainly determined by the layout passed to `ribbony-diagram`.
 
 #def
 ```
@@ -414,7 +414,7 @@ drawer = (nodes: layouted-nodes, ribbon-stylizer, draw-label) -> content
 
 == Built-in Layouts
 
-Ribbons library provides a few built-in layouts for common ribbon diagrams. They take some parameters to customize the layouting and drawing process, then return the #type-box("layout") needed for `ribbon-diagram`.
+Ribbony library provides a few built-in layouts for common ribbon diagrams. They take some parameters to customize the layouting and drawing process, then return the #type-box("layout") needed for `ribbony-diagram`.
 
 === Auto Linear Layout (Sankey): `layout.auto-linear`
 
@@ -461,7 +461,7 @@ It automatically arranges nodes in layers based on their topological order, and 
 		The corner radius of nodes.
 	]),
 	( "curve-factor", "number", false, `0.3`, [
-		The curve factor for the ribbons. Larger values result in more curved ribbons.
+		The curve factor for the ribbony. Larger values result in more curved ribbony.
 	]),
 ))
 
@@ -470,7 +470,7 @@ It automatically arranges nodes in layers based on their topological order, and 
 
 A layout for drawing circular ribbon diagrams (Chord diagrams).
 
-Circular layout does not assign each node a layer. It puts every node on a circle and put ribbons between them.
+Circular layout does not assign each node a layer. It puts every node on a circle and put ribbony between them.
 
 It has directed and undirected mode. In directed mode, each edge is represented by a ribbon flowing from source node to target node. In undirected mode, multi-edges connecting to the same node pairs are merged, then forward and backward flows are merged into a single ribbon with two different sizes on each side.
 
@@ -503,7 +503,7 @@ tinter = (data: layouted-data) -> colored-data
 ```
 
 
-Ribbons library provides some built-in tinters, and you can also create your own custom tinter functions as well.
+Ribbony library provides some built-in tinters, and you can also create your own custom tinter functions as well.
 
 == Built-in Tinters
 
@@ -744,7 +744,7 @@ Assign the same color to all nodes.
 
 == Make a Custom Tinter
 
-You can create your own custom tinter functions by defining a function that takes the layouted data as input and returns the colored data. Layouted data is a dictionary that maps node ids to their properties, including position, size, and any other attributes added during the layouting process. To see the structure of layouted data, you can pass `debug: 2` to `ribbon-diagram` function to inspect the data after layouting.
+You can create your own custom tinter functions by defining a function that takes the layouted data as input and returns the colored data. Layouted data is a dictionary that maps node ids to their properties, including position, size, and any other attributes added during the layouting process. To see the structure of layouted data, you can pass `debug: 2` to `ribbony-diagram` function to inspect the data after layouting.
 
 Tinter function should iterate over each node in the layouted data, and set their `color` field to the desired color.
 
@@ -821,7 +821,7 @@ Here is what one of the nodes (`Sales`) looks like in the passed data:
 
 == Palette (`tinter.palette`) <sec:palette>
 
-A palette is an array of #type-box("color"), used by #link(<sec:tinter>)[tinters] to assign colors to nodes. Ribbons library provides some built-in palettes in `palette` module.
+A palette is an array of #type-box("color"), used by #link(<sec:tinter>)[tinters] to assign colors to nodes. Ribbony library provides some built-in palettes in `palette` module.
 
 #def
 ```
@@ -873,7 +873,7 @@ The default palette is `color-brewer`.
 
 = Ribbon Stylizer <sec:ribbon-stylizer>
 
-Ribbon stylizers give styles to ribbons based on such as color, gradient, stroke, etc.
+Ribbon stylizers give styles to ribbony based on such as color, gradient, stroke, etc.
 
 #type-box("ribbon-stylizer") is a function that takes 5 positional parameters: `edge`, `from-color`, `to-color`, `from-node`, `to-node`, and potentially some extra parameters (such as `angle` for gradient direction) that drawer may pass in for extra information. It returns a dictionary of style attributes for the ribbon representing the edge, keys including `fill`, `stroke`, etc.
 
@@ -1704,7 +1704,7 @@ Data source: https://observablehq.com/@d3/sankey-component, https://www.gov.uk/g
 
 = Internal Types
 
-Here are the definitions and examples of some internal types used in the `typst-ribbons` library.
+Here are the definitions and examples of some internal types used in the `typst-ribbony` library.
 
 == Edge <sec:internal-type-edge>
 Internally, an edge is represented as a dictionary with the following keys:

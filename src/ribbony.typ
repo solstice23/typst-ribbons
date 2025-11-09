@@ -4,7 +4,7 @@
 #import "./tinter.typ"
 #import "./label.typ"
 
-#let ribbon-diagram = (
+#let ribbony-diagram = (
 	data,
 	aliases: (:),
 	categories: (:),
@@ -39,7 +39,7 @@
     ribbon-stylizer: ribbon-stylizer.match-from(),
     draw-label: label.default-linear-label-drawer(),
     ..args
-) => ribbon-diagram(
+) => ribbony-diagram(
     data,
     aliases: aliases,
     categories: categories,
@@ -59,7 +59,7 @@
 	ribbon-stylizer: ribbon-stylizer.gradient-from-to(),
 	draw-label: label.default-circular-label-drawer(),
     ..args
-) => ribbon-diagram(
+) => ribbony-diagram(
     data,
     aliases: aliases,
     categories: categories,
