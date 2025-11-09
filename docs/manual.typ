@@ -1,5 +1,4 @@
 #import "../src/ribbons.typ": *
-//#import "../src/palette.typ"
 
 
 // Common styles
