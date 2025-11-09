@@ -1,5 +1,5 @@
 #import "../src/ribbons.typ": *
-#import "../src/palette.typ"
+//#import "../src/palette.typ"
 
 
 // Common styles
@@ -12,7 +12,7 @@
 	fill: black.transparentize(95%),
 	radius: 4pt
 )
-#let premable = "#import \"../src/ribbons.typ\": * \n #import \"../src/palette.typ\""
+#let premable = "#import \"../src/ribbons.typ\": *"
 #let example = (code, display-code: none, side-by-side: true) => {
 	if (code.func() != raw ) {
 		code = code.children.find(it => it.func() == raw)
@@ -494,53 +494,6 @@ It has directed and undirected mode. In directed mode, each edge is represented 
 	]),
 ))
 
-= Palette <sec:palette>
-
-A palette is an array of #type-box("color"), used by #link(<sec:tinter>)[tinters] to assign colors to nodes. Ribbons library provides some built-in palettes in `palette` module.
-
-#def
-```
-palette = array<color>
-```
-
-#let palette-visualizer = (palette) => {
-	grid(
-		columns: palette.len(),
-		gutter: 5pt,
-		..palette.map(color => circle(radius: 10pt, fill: color))
-	)
-}
-
-#ex
-
-```typc
-(aqua, teal, purple, red, orange, yellow, green) // array of typst built-in colors
-```
-#palette-visualizer((aqua, teal, fuchsia, red, orange, yellow, green))
-
-```typc
-(rgb("#555555"),	rgb("#777777"),	rgb("#999999")) // shade of gray
-```
-#palette-visualizer((rgb("#555555"),	rgb("#777777"),	rgb("#999999")))
-
-== Built-in Palettes
-
-=== Default Palette: `palette.default`
-
-The default palette is `color-brewer`.
-
-=== Color Brewer Palette: `palette.color-brewer`
-
-#palette-visualizer(palette.color-brewer)
-
-=== Tableau Palette: `palette.tableau`
-
-#palette-visualizer(palette.tableau)
-
-=== Catppuccin Palette: `palette.catppuccin`
-
-#palette-visualizer(palette.catppuccin)
-
 
 = Tinter <sec:tinter>
 #type-box("tinter") is a function that assigns colors to nodes based on their properties. It takes the data after layouting and returns the new data with colors assigned to each node.
@@ -866,6 +819,57 @@ Here is what one of the nodes (`Sales`) looks like in the passed data:
 )
 ```
 
+
+== Palette (`tinter.palette`) <sec:palette>
+
+A palette is an array of #type-box("color"), used by #link(<sec:tinter>)[tinters] to assign colors to nodes. Ribbons library provides some built-in palettes in `palette` module.
+
+#def
+```
+palette = array<color>
+```
+
+#let palette-visualizer = (palette) => {
+	grid(
+		columns: palette.len(),
+		gutter: 5pt,
+		..palette.map(color => circle(radius: 10pt, fill: color))
+	)
+}
+
+#ex
+
+```typc
+(aqua, teal, purple, red, orange, yellow, green) // array of typst built-in colors
+```
+#palette-visualizer((aqua, teal, fuchsia, red, orange, yellow, green))
+
+```typc
+(rgb("#555555"),	rgb("#777777"),	rgb("#999999")) // shade of gray
+```
+#palette-visualizer((rgb("#555555"),	rgb("#777777"),	rgb("#999999")))
+
+=== Built-in Palettes
+
+==== Default Palette: `tinter.palette.default`
+
+The default palette is `color-brewer`.
+
+==== Color Brewer Palette: `tinter.palette.color-brewer`
+
+#palette-visualizer(tinter.palette.color-brewer)
+
+==== Plotly Palette: `tinter.palette.plotly`
+
+#palette-visualizer(tinter.palette.plotly)
+
+==== Plotly Pastel Palette: `tinter.palette.plotly-pastel`
+
+#palette-visualizer(tinter.palette.plotly-pastel)
+
+==== Catppuccin Palette: `tinter.palette.catppuccin`
+
+#palette-visualizer(tinter.palette.catppuccin)
 
 
 = Ribbon Stylizer <sec:ribbon-stylizer>
@@ -1543,7 +1547,7 @@ We want to show text inside each nodes in the vertical linear layout, with the n
 = Showcase
 
 == Apple Financial Report
-Data source: https://sankeymatic.com/data/apple/#diagram-notes-2025-q3, https://www.apple.com/newsroom/pdfs/fy2025-q3/FY25_Q3_Consolidated_Financial_Statements.pdf
+Data source: https://sankeymatic.com/data/apple/#diagram-notes-2025-q3, https://www.apple.com/newsroom/pdfs/fy2025-q3/FY25_Q3_Consolidated_Financial_Statements.pdf (ISC)
 #example(side-by-side: false)[```typ
 #sankey-diagram(
 	(
@@ -1574,7 +1578,7 @@ Data source: https://sankeymatic.com/data/apple/#diagram-notes-2025-q3, https://
 )```]
 
 == Phone Brands Loyalty Flow
-Data source: https://nbremer.github.io/Chord-Diagram-Storytelling/
+Data source: https://gist.github.com/nbremer/94db779237655907b907
 
 #example(side-by-side: false)[```typ
 #chord-diagram(
@@ -1599,7 +1603,7 @@ Data source: https://nbremer.github.io/Chord-Diagram-Storytelling/
 
 == Energy Flow
 
-Data source: https://observablehq.com/@d3/sankey-component, https://www.gov.uk/guidance/2050-pathways-analysis
+Data source: https://observablehq.com/@d3/sankey-component, https://www.gov.uk/guidance/2050-pathways-analysis (ISC, Open Government Licence v3.0)
 
 #example(side-by-side: false)[```typ
 #sankey-diagram(
@@ -1689,7 +1693,7 @@ Data source: https://observablehq.com/@d3/sankey-component, https://www.gov.uk/g
 			"7": ("Losses", "Over generation / exports", "Heating and cooling - homes", "Heating and cooling - commercial", "Lighting & appliances - homes", "Lighting & appliances - commercial", "Industry", "Road transport", "Rail transport", "International aviation", "Domestic aviation", "International shipping", "National navigation", "Agriculture")
 		)
 	),
-	tinter: tinter.layer-tinter(palette: palette.catppuccin),
+	tinter: tinter.layer-tinter(palette: tinter.palette.catppuccin),
 	ribbon-stylizer: ribbon-stylizer.gradient-from-to(),
 	draw-label: label.default-linear-label-drawer(
 		width-limit: false,
