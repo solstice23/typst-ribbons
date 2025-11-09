@@ -4,6 +4,8 @@ A library for creating ribbon diagrams, such as Sankey and Chord diagrams, in Ty
 
 typst-ribbons is based on [cetz](https://github.com/cetz-package/cetz).
 
+More diagrams (layouts) are planned to be added in the future.
+
 ## Manual
 
 Read [manual](docs/manual.pdf) for documentation and examples.
